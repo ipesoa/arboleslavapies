@@ -262,6 +262,44 @@ function openGuide(){
   drawer.classList.add('open');$('#guideSuggest').onclick=()=>suggestDialog.showModal();
 }
 
+
+function openSpread(){
+  drawerContent.innerHTML=`<div class="eyebrow">Hazlo circular</div><h1 class="tree-title ui-type">Difunde</h1>
+  <p>Si te apetece, puedes imprimir este cartel y colocarlo cerca de un árbol para que más vecinxs encuentren el mapa.</p>
+  <div class="spread-card">
+    <img src="assets/qr-arboles-lavapies.png?v=0.4.2" alt="QR de Árboles Lavapiés" />
+    <div><strong class="ui-type">Cartel A4</strong><p class="muted">¿Puedes regar este árbol? Estamos tejiendo una red de apoyo a los árboles de Lavapiés.</p></div>
+  </div>
+  <a class="download-poster ui-type" href="assets/cartel-arboles-lavapies-a4.pdf" download>Descargar PDF A4</a>`;
+  drawer.classList.add('open');
+}
+
+async function locateMe(){
+  if(!('geolocation' in navigator)){
+    showStatus('Tu navegador no ofrece ubicación. Puedes buscar tu calle arriba.',5200);
+    return;
+  }
+  showStatus('Buscando tu ubicación…',9000);
+  navigator.geolocation.getCurrentPosition(
+    pos=>{map.flyTo([pos.coords.latitude,pos.coords.longitude],18);showStatus('Mostrando tu zona aproximada.');},
+    err=>{
+      const msg=err?.code===1
+        ? 'La ubicación está bloqueada. Activa el permiso de ubicación para esta página o busca tu calle arriba.'
+        : err?.code===3
+          ? 'La ubicación está tardando demasiado. Prueba otra vez o busca tu calle arriba.'
+          : 'No se pudo obtener tu ubicación. Puedes buscar tu calle arriba.';
+      showStatus(msg,6500);
+    },
+    {enableHighAccuracy:false,timeout:10000,maximumAge:60000}
+  );
+}
+
+function bindButton(id,handler){
+  const el=document.getElementById(id);
+  if(!el){console.warn(`[Árboles Lavapiés] falta #${id}`);return;}
+  el.addEventListener('click',handler);
+}
+
 async function refreshIdentityNav(){
   const id=await syncLocalIdentity(); const btn=$('#profileBtn');
   if(!id){btn.innerHTML='Identidad';return;}
@@ -289,15 +327,36 @@ async function refreshIdentityDialog(){
 }
 
 async function loadData(){
-  try{
-    const [tr,er,pr,phr,mr]=await Promise.all([
-      fetch('./data/trees.geojson').then(r=>r.json()),fetch('./data/events.json').then(r=>r.json()),fetch('./data/places.geojson').then(r=>r.json()),
-      fetch('./data/photos.json').then(r=>r.ok?r.json():[]).catch(()=>[]),fetch('./data/meta.json').then(r=>r.ok?r.json():{}).catch(()=>({}))
-    ]);
-    trees=tr.features||[];events=er||[];places=pr.features||[];photos=phr||[];meta=mr||{};
-    renderTrees(trees);renderCommunity(places);updateCounter(trees.length);await refreshIdentityNav();
-    showStatus(trees.length?`${trees.length.toLocaleString('es-ES')} árboles cargados`:'Mapa listo. Falta importar el arbolado de Embajadores.',4200);
-  }catch(e){showStatus('No se pudieron cargar los datos.');console.error(e);}
+  const stamp=encodeURIComponent(cfg.version||String(Date.now()));
+  const getJson=async(path,fallback)=>{
+    try{
+      const sep=path.includes('?')?'&':'?';
+      const r=await fetch(`${path}${sep}v=${stamp}`,{cache:'no-store'});
+      if(!r.ok)throw new Error(`${path}: HTTP ${r.status}`);
+      return await r.json();
+    }catch(e){
+      console.error('[Árboles Lavapiés]',e);
+      return fallback;
+    }
+  };
+  const [tr,er,pr,phr,mr]=await Promise.all([
+    getJson('./data/trees.geojson',{type:'FeatureCollection',features:[]}),
+    getJson('./data/events.json',[]),
+    getJson('./data/places.geojson',{type:'FeatureCollection',features:[]}),
+    getJson('./data/photos.json',[]),
+    getJson('./data/meta.json',{})
+  ]);
+  trees=Array.isArray(tr?.features)?tr.features:[];
+  events=Array.isArray(er)?er:[];
+  places=Array.isArray(pr?.features)?pr.features:[];
+  photos=Array.isArray(phr)?phr:[];
+  meta=mr||{};
+  renderTrees(trees);renderCommunity(places);updateCounter(trees.length);await refreshIdentityNav();
+  if(trees.length){
+    showStatus(`${trees.length.toLocaleString('es-ES')} árboles cargados`,4200);
+  }else{
+    showStatus('El inventario de árboles no se ha cargado todavía. Hay que volver a actualizar los datos del mapa.',7000);
+  }
 }
 function renderTrees(features){
   treeLayer.clearLayers(); for(const f of features){if(!f.geometry||f.geometry.type!=='Point')continue;const [lon,lat]=f.geometry.coordinates,id=idLabel(f.properties||{}),st=wateringState(id);L.circleMarker([lat,lon],markerStyle(st.cls)).bindTooltip(id,{direction:'top',opacity:.8}).on('click',()=>openTree(f)).addTo(treeLayer);}
@@ -309,10 +368,17 @@ map.on('zoomend',()=>{treeLayer.eachLayer(l=>{if(l.setRadius)l.setRadius(map.get
 async function geocode(query){const q=query.includes('Madrid')?query:`${query}, ${cfg.defaultSearchSuffix}`;return nominatimFetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=es&q=${encodeURIComponent(q)}`);}
 async function doSearch(){const q=$('#searchInput').value.trim();if(!q)return;const local=trees.find(f=>idLabel(f.properties||{}).toLowerCase()===q.toLowerCase());if(local){const [lon,lat]=local.geometry.coordinates;map.flyTo([lat,lon],19);openTree(local);return;}showStatus('Buscando…',5000);try{const rs=await geocode(q);if(!rs.length)return showStatus('No encuentro esa dirección.');map.flyTo([+rs[0].lat,+rs[0].lon],18);showStatus(rs[0].display_name);}catch{showStatus('La búsqueda de direcciones no está disponible ahora.');}}
 
-$('#searchBtn').onclick=doSearch;$('#searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
-$('#nearBtn').onclick=()=>navigator.geolocation?.getCurrentPosition(pos=>{map.flyTo([pos.coords.latitude,pos.coords.longitude],18);showStatus('Mostrando tu zona aproximada.');},()=>showStatus('No se pudo acceder a tu ubicación.'));
-$('#drawerClose').onclick=()=>drawer.classList.remove('open');$('#profileBtn').onclick=async()=>{await refreshIdentityDialog();identityDialog.showModal();};$('#addPlaceBtn').onclick=()=>addDialog.showModal();
-$('#issuesBtn').onclick=openIssues;$('#guideBtn').onclick=openGuide;$('#suggestBtn').onclick=()=>suggestDialog.showModal();$('#aboutBtn').onclick=openAbout;
+bindButton('searchBtn',doSearch);
+$('#searchInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
+bindButton('nearBtn',locateMe);
+bindButton('drawerClose',()=>drawer.classList.remove('open'));
+bindButton('profileBtn',async()=>{await refreshIdentityDialog();identityDialog.showModal();});
+bindButton('addPlaceBtn',()=>addDialog.showModal());
+bindButton('issuesBtn',openIssues);
+bindButton('guideBtn',openGuide);
+bindButton('suggestBtn',()=>suggestDialog.showModal());
+bindButton('aboutBtn',openAbout);
+bindButton('spreadBtn',openSpread);
 $('#needsBtn').onclick=()=>{showingNeeds=!showingNeeds;if(showingNeeds){const needy=trees.filter(f=>wateringState(idLabel(f.properties||{})).cls==='danger');renderTrees(needy);updateCounter(needy.length);showStatus(needy.length?`${needy.length} árboles con riego antiguo registrado.`:'Todavía no hay árboles marcados como atrasados; los que no tienen historial siguen en gris.');$('#needsBtn').textContent='Mostrar todos';}else{renderTrees(trees);updateCounter(trees.length);showStatus('Mostrando todos los árboles.');$('#needsBtn').textContent='Necesitan agua';}};
 
 $('#createIdentityBtn').onclick=async()=>{const alias=$('#aliasInput').value.trim();try{if(await aliasExists(alias))throw new Error('Ese alias ya está publicado. Elige otro.');const id=await createPendingIdentity(alias);$('#secretAlias').textContent=id.alias;$('#secretCode').textContent=id.secret;identityDialog.close();secretDialog.showModal();deliverSubmission(registrationPayload(id),`registro-${id.alias}`);await refreshIdentityNav();}catch(e){showStatus(e.message,4500);}};
