@@ -51,3 +51,36 @@ body,p,label,input,textarea,select,.event,.muted{font-style:normal;text-transfor
 
 /* v0.4.3 · bandeja local de aportaciones */
 .outbox-nav{white-space:nowrap}.outbox-nav #outboxCount{display:inline-flex;min-width:18px;height:18px;align-items:center;justify-content:center;margin-left:3px;padding:0 5px;border-radius:999px;background:#eceee8;color:var(--ink);font-size:10px;font-style:normal}.outbox-nav.has-items{background:#171915!important;color:#fff!important;border-radius:999px}.outbox-nav.has-items #outboxCount{background:#fff;color:#171915}.outbox-list{margin:16px 0;display:grid;gap:7px}.outbox-item{display:grid;grid-template-columns:1fr auto;align-items:start;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}.outbox-item strong{display:block;font-size:12px}.outbox-item span{display:block;margin-top:3px;font-size:13px}.outbox-item small{display:block;margin-top:5px;color:var(--muted);line-height:1.35}.outbox-item>button{border:0!important;background:transparent!important;padding:0 3px!important;font-size:21px;color:var(--muted)!important}.send-explainer{margin:18px 0 10px;padding:14px;border-radius:10px;background:var(--soft);line-height:1.45}.send-explainer p{margin:6px 0 0}.outbox-dialog .identity-warning{margin-top:12px}.outbox-dialog button:disabled{opacity:.4;cursor:not-allowed}.profile-blank{height:8px}
+
+
+/* v0.4.4 · bienvenida */
+.welcome-dialog{
+  width:min(520px,calc(100% - 28px));
+  max-height:min(720px,calc(100dvh - 36px));
+  padding:26px 26px 22px;
+}
+.welcome-dialog::backdrop{background:rgba(20,24,18,.24);backdrop-filter:blur(1px)}
+.welcome-dialog h2{font-size:30px;line-height:1;margin:5px 48px 12px 0}
+.welcome-lead{font-size:16px;line-height:1.45;margin:0 0 18px;max-width:42ch}
+.welcome-step{padding:12px 0;border-top:1px solid var(--line)}
+.welcome-step strong{font-size:13px}
+.welcome-step p{margin:5px 0 0;line-height:1.48;font-size:14px}
+.welcome-step.compact p{font-size:13px}
+.welcome-help{margin:15px 0 17px;font-size:13px;line-height:1.45;color:var(--muted)}
+.welcome-help a{color:var(--ink);text-underline-offset:2px}
+.welcome-close{width:44px!important;height:44px!important;right:8px!important;top:6px!important;font-size:34px!important;line-height:40px!important;z-index:3}
+.welcome-enter{margin-top:4px}
+@media(max-width:650px){
+  .welcome-dialog{
+    width:calc(100% - 20px);
+    max-height:82dvh;
+    padding:22px 20px 18px;
+    border-radius:14px;
+  }
+  .welcome-dialog::backdrop{background:rgba(15,18,14,.18);backdrop-filter:none}
+  .welcome-dialog h2{font-size:25px;margin-right:48px}
+  .welcome-lead{font-size:15px}
+  .welcome-step{padding:10px 0}
+  .welcome-step p{font-size:13px}
+  .welcome-close{position:fixed!important;right:14px!important;top:max(12px,env(safe-area-inset-top))!important;background:#fff!important;border:1px solid var(--line)!important;border-radius:50%!important;box-shadow:0 3px 18px #0002!important}
+}

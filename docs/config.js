@@ -5,8 +5,8 @@ window.APP_CONFIG = {
   zoom: 16,
   maxZoom: 19,
   defaultSearchSuffix: "Madrid, España",
-  version: "0.4.3",
-  lastReview: "2026-09-16T15:45:00+02:00",
+  version: "0.4.4",
+  lastReview: "2026-09-16T15:58:00+02:00",
   creatorName: "iPesoa editorial",
   creatorUrl: "https://www.instagram.com/ipesoaeditorial/"
 };

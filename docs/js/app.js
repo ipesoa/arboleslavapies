@@ -51,6 +51,7 @@ setupBrand();
 
 const drawer = $('#drawer');
 const drawerContent = $('#drawerContent');
+const welcomeDialog = $('#welcomeDialog');
 const identityDialog = $('#identityDialog');
 const secretDialog = $('#secretDialog');
 const addDialog = $('#addDialog');
@@ -445,6 +446,18 @@ function updateCoords(){$('#placeCoords').textContent=pendingLatLng?`${pendingLa
 $('#preparePlaceBtn').onclick=async()=>{if(!pendingLatLng)return;const id=await syncLocalIdentity();if(id?.state==='rejected'){addDialog.close();await refreshIdentityDialog();identityDialog.showModal();return;}const payload={type:'new_place',place_type:$('#placeType').value,lat:pendingLatLng.lat,lon:pendingLatLng.lng,note:$('#placeNote').value.trim(),date:new Date().toISOString(),alias:id?.alias||'Anónimo'};if(id?.secret)payload.identity_code=id.secret;deliverSubmission(payload,'nuevo-lugar');addDialog.close();showStatus('Alta preparada. Queda pendiente de revisión y actualización.');};
 
 $('#sendSuggestBtn').onclick=async()=>{const text=$('#suggestText').value.trim();if(!text)return showStatus('Escribe la sugerencia.');const id=await syncLocalIdentity();const payload={type:'suggestion',category:$('#suggestCategory').value,note:text,date:new Date().toISOString(),alias:id?.alias||'Anónimo'};if(id?.secret)payload.identity_code=id.secret;deliverSubmission(payload,'sugerencia');suggestDialog.close();$('#suggestText').value='';};
+
+// Bienvenida: una vez por sesión de navegación. Se puede reabrir recargando una nueva sesión/pestaña.
+if(welcomeDialog){
+  const WELCOME_SESSION_KEY='arboleslavapies_welcome_seen_v1';
+  const markWelcomeSeen=()=>{try{sessionStorage.setItem(WELCOME_SESSION_KEY,'1');}catch{}};
+  welcomeDialog.addEventListener('close',markWelcomeSeen);
+  let alreadySeen=false;
+  try{alreadySeen=sessionStorage.getItem(WELCOME_SESSION_KEY)==='1';}catch{}
+  if(!alreadySeen){
+    setTimeout(()=>{if(!welcomeDialog.open)welcomeDialog.showModal();},350);
+  }
+}
 
 refreshOutboxCount();
 syncLocalIdentity().finally(loadData);
