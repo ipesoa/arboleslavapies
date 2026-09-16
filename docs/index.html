@@ -7,7 +7,7 @@
   <meta name="description" content="Mapa vecinal abierto para cuidar, documentar y recordar el arbolado de Lavapiés." />
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="css/app.css?v=0.4.2" />
+  <link rel="stylesheet" href="css/app.css?v=0.4.3" />
 </head>
 <body>
   <header class="topbar">
@@ -17,6 +17,7 @@
       <button id="issuesBtn" class="text-btn ui-type">Incidencias</button>
       <button id="guideBtn" class="text-btn ui-type">Guía</button>
       <button id="suggestBtn" class="text-btn ui-type">Buzón</button>
+      <button id="outboxBtn" class="text-btn ui-type outbox-nav">Enviar <span id="outboxCount">0</span></button>
       <button id="profileBtn" class="text-btn ui-type profile-nav">Identidad</button>
       <button id="aboutBtn" class="text-btn ui-type">¿Qué es?</button>
       <button id="spreadBtn" class="text-btn ui-type">Difunde</button>
@@ -103,7 +104,7 @@
       </label>
       <div id="placeCoords" class="coords">Sin ubicación todavía</div>
       <button id="startPinBtn" type="button" class="primary full ui-type">Elegir punto en el mapa</button>
-      <button id="preparePlaceBtn" type="button" class="full ui-type" disabled>Preparar solicitud</button>
+      <button id="preparePlaceBtn" type="button" class="full ui-type" disabled>Añadir a enviar</button>
     </form>
   </dialog>
 
@@ -140,7 +141,7 @@
         <textarea id="actionNote" rows="5" placeholder="Escribe una nota si hace falta…"></textarea>
       </label>
       <p class="muted small-copy">La aportación se confirma en la siguiente actualización diaria. Las incidencias y cambios de mapa pueden pasar por revisión manual.</p>
-      <button id="sendActionBtn" type="button" class="primary full ui-type">Preparar envío</button>
+      <button id="sendActionBtn" type="button" class="primary full ui-type">Añadir a enviar</button>
     </form>
   </dialog>
 
@@ -157,7 +158,29 @@
         <textarea id="photoCaption" rows="3" placeholder="Por ejemplo: estado del árbol después del riego…"></textarea>
       </label>
       <div id="photoPreviewWrap" class="photo-preview-wrap hidden"><img id="photoPreview" alt="Vista previa" /></div>
-      <button id="sendPhotoBtn" type="button" class="primary full ui-type" disabled>Preparar foto</button>
+      <button id="sendPhotoBtn" type="button" class="primary full ui-type" disabled>Añadir foto a enviar</button>
+    </form>
+  </dialog>
+
+  <dialog id="outboxDialog" class="dialog outbox-dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <div class="eyebrow">Aportaciones pendientes</div>
+      <h2 class="ui-type">Enviar todo junto</h2>
+      <p>La web no tiene un servidor que reciba formularios. Por eso tus aportaciones se guardan <strong>sólo en este navegador</strong> hasta que decides enviarlas.</p>
+      <p class="muted">Puedes seguir marcando riegos, compromisos, incidencias o sugerencias. Al final se prepara un único JSON con todo.</p>
+      <div id="outboxList" class="outbox-list"></div>
+      <div id="outboxPhotoWarning" class="identity-warning hidden"></div>
+      <div class="send-explainer">
+        <strong class="ui-type">¿Cómo lo envío?</strong>
+        <p>Elige la opción que te resulte más cómoda. Las tres envían exactamente los mismos datos a <strong id="outboxEmail"></strong>.</p>
+      </div>
+      <button id="openMailBtn" type="button" class="primary full ui-type">Abrir mi correo</button>
+      <button id="openGmailBtn" type="button" class="full ui-type">Abrir Gmail web</button>
+      <button id="downloadBundleBtn" type="button" class="full ui-type">Descargar JSON</button>
+      <button id="copyBundleBtn" type="button" class="full ui-type">Copiar JSON</button>
+      <p class="muted small-copy">Si ninguna opción abre tu correo, descarga el JSON y envíalo como adjunto a la dirección indicada arriba. Si has añadido fotografías, adjunta también los archivos WebP que descargó la web.</p>
+      <button id="markSentBtn" type="button" class="full ui-type">Ya lo he enviado · vaciar bandeja</button>
     </form>
   </dialog>
 
@@ -178,12 +201,12 @@
       <label>Mensaje
         <textarea id="suggestText" rows="6" placeholder="Cuéntanos…"></textarea>
       </label>
-      <button id="sendSuggestBtn" type="button" class="primary full ui-type">Preparar sugerencia</button>
+      <button id="sendSuggestBtn" type="button" class="primary full ui-type">Añadir a enviar</button>
     </form>
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="config.js?v=0.4.2"></script>
-  <script type="module" src="js/app.js?v=0.4.2"></script>
+  <script src="config.js?v=0.4.3"></script>
+  <script type="module" src="js/app.js?v=0.4.3"></script>
 </body>
 </html>

@@ -57,6 +57,8 @@ const addDialog = $('#addDialog');
 const actionDialog = $('#actionDialog');
 const photoDialog = $('#photoDialog');
 const suggestDialog = $('#suggestDialog');
+const outboxDialog = $('#outboxDialog');
+const OUTBOX_KEY = 'arboleslavapies_outbox_v1';
 
 function showStatus(text, ms=3400){
   const el=$('#status'); el.textContent=text; el.classList.remove('hidden');
@@ -85,21 +87,67 @@ function submissionId(){if(crypto.randomUUID)return `s_${crypto.randomUUID()}`;c
 function ensureSubmissionMeta(payload){if(!payload.submission_id)payload.submission_id=submissionId();return payload;}
 function downloadBlob(blob,filename){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);}
 function downloadSubmission(payload,name='solicitud'){downloadBlob(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),`${name}-${Date.now()}.json`);}
+function getOutbox(){
+  try{const raw=JSON.parse(localStorage.getItem(OUTBOX_KEY)||'[]');return Array.isArray(raw)?raw:[];}catch{return [];}
+}
+function saveOutbox(items){localStorage.setItem(OUTBOX_KEY,JSON.stringify(items));refreshOutboxCount();}
+function submissionTypeLabel(type){return ({identity_registration:'Identidad',watering:'Riego',commitment:'Compromiso',comment:'Comentario',issue:'Incidencia',new_place:'Nuevo lugar',photo:'Fotografía',suggestion:'Sugerencia'})[type]||type||'Aportación';}
+function submissionPlaceLabel(payload){return payload.place_id||payload.tree_id||(payload.lat&&payload.lon?'Nuevo punto del mapa':'');}
+function refreshOutboxCount(){
+  const items=getOutbox(),count=items.length,el=$('#outboxCount'),btn=$('#outboxBtn');
+  if(el)el.textContent=String(count);
+  if(btn)btn.classList.toggle('has-items',count>0);
+}
 function deliverSubmission(payload,name='solicitud',extraText=''){
   payload=ensureSubmissionMeta(payload);
-  if(cfg.projectEmail){
-    const subject=`[Árboles Lavapiés] ${payload.type} · ${payload.alias || 'Anónimo'}`;
-    const body=[
-      'Aportación para Árboles Lavapiés.',extraText,'No hace falta modificar el bloque siguiente:','',
-      '---ARBOLES_LAVAPIES_JSON---',JSON.stringify(payload,null,2),'---FIN_ARBOLES_LAVAPIES_JSON---'
-    ].filter(Boolean).join('\n');
-    window.location.href=`mailto:${encodeURIComponent(cfg.projectEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    showStatus('Se ha abierto tu correo. Pulsa Enviar para terminar.',5500);
-  }else{
-    downloadSubmission(payload,name);
-    showStatus('Solicitud guardada como JSON. Falta configurar el correo del proyecto.',5000);
+  const items=getOutbox();
+  if(!items.some(x=>x?.payload?.submission_id===payload.submission_id)){
+    items.push({payload,name,extra_text:extraText||'',added_at:new Date().toISOString()});
+    saveOutbox(items);
   }
+  showStatus(`Añadido a ENVIAR · ${items.length}. Puedes seguir usando el mapa.`,5000);
 }
+function buildBundle(){
+  const items=getOutbox();
+  return {
+    format:'arboleslavapies.bundle.v1',
+    bundle_id:submissionId(),
+    created_at:new Date().toISOString(),
+    project_version:cfg.version||'0.4.3',
+    item_count:items.length,
+    items:items.map(x=>x.payload)
+  };
+}
+function bundleBody(bundle){
+  const photoCount=bundle.items.filter(x=>x.type==='photo').length;
+  return [
+    'Hola, envío mis aportaciones para Árboles Lavapiés.',
+    '',
+    `Aportaciones: ${bundle.item_count}.`,
+    photoCount?`Fotografías: ${photoCount}. He adjuntado los WebP descargados por la web.`:'',
+    'No hace falta modificar el bloque siguiente:',
+    '',
+    '---ARBOLES_LAVAPIES_JSON---',
+    JSON.stringify(bundle,null,2),
+    '---FIN_ARBOLES_LAVAPIES_JSON---'
+  ].filter(Boolean).join('\n');
+}
+function renderOutbox(){
+  const items=getOutbox(),box=$('#outboxList');
+  if(!box)return;
+  $('#outboxEmail').textContent=cfg.projectEmail||'correo del proyecto';
+  if(!items.length){
+    box.innerHTML='<div class="empty-block">Todavía no has preparado ninguna aportación.</div>';
+  }else{
+    box.innerHTML=items.map((x,i)=>{const p=x.payload||{};return `<div class="outbox-item"><div><strong class="ui-type">${esc(submissionTypeLabel(p.type))}</strong>${submissionPlaceLabel(p)?`<span>${esc(submissionPlaceLabel(p))}</span>`:''}${p.note?`<small>${esc(String(p.note).slice(0,120))}</small>`:''}</div><button type="button" data-remove-outbox="${i}" aria-label="Quitar">×</button></div>`;}).join('');
+    box.querySelectorAll('[data-remove-outbox]').forEach(b=>b.onclick=()=>{const list=getOutbox();list.splice(Number(b.dataset.removeOutbox),1);saveOutbox(list);renderOutbox();});
+  }
+  const photos=items.filter(x=>x?.payload?.type==='photo').length,warn=$('#outboxPhotoWarning');
+  if(warn){warn.classList.toggle('hidden',photos===0);warn.innerHTML=photos?`<strong>${photos} fotografía${photos===1?'':'s'} pendiente${photos===1?'':'s'}.</strong><p>Los archivos WebP se descargaron al añadirlas. Acuérdate de adjuntarlos al correo junto al JSON.</p>`:'';}
+  ['openMailBtn','openGmailBtn','downloadBundleBtn','copyBundleBtn','markSentBtn'].forEach(id=>{const el=$(`#${id}`);if(el)el.disabled=!items.length;});
+}
+function openOutbox(){renderOutbox();outboxDialog.showModal();}
+function requireProjectEmail(){if(cfg.projectEmail)return true;showStatus('Todavía no está configurado el correo del proyecto.',5000);return false;}
 
 async function nominatimFetch(url){
   const wait=Math.max(0,1100-(Date.now()-lastNominatimAt)); if(wait)await new Promise(r=>setTimeout(r,wait));
@@ -227,7 +275,7 @@ $('#sendPhotoBtn').onclick=async()=>{
     const payload={type:'photo',place_id:photoPlaceId,date:new Date().toISOString(),caption:$('#photoCaption').value.trim(),photo_filename:filename,alias:identity?.alias||'Anónimo'};
     if(identity?.secret)payload.identity_code=identity.secret;
     deliverSubmission(payload,`foto-${photoPlaceId}`,'La foto comprimida se ha descargado en tu dispositivo. ADJÚNTALA a este correo antes de enviarlo.');
-    photoDialog.close(); showStatus(cfg.projectEmail?'Adjunta al correo la foto WebP que acaba de descargarse.':'Foto y solicitud descargadas para pruebas.',7000);
+    photoDialog.close(); showStatus('Foto preparada y añadida a ENVIAR. Guarda el WebP para adjuntarlo cuando mandes todo.',7000);
   }catch(e){showStatus(e.message||'No se pudo preparar la foto.',5000);}
 };
 
@@ -241,7 +289,7 @@ function openIssues(){
 function goToPlace(id){const f=trees.find(x=>idLabel(x.properties||{})===id)||places.find(x=>idLabel(x.properties||{})===id);if(!f)return showStatus('No encuentro ese lugar en el mapa.');const [lon,lat]=f.geometry.coordinates;map.flyTo([lat,lon],18);openTree(f);}
 
 function openInfoMenu(){
-  drawerContent.innerHTML=`<div class="eyebrow">Árboles Lavapiés</div><h1 class="tree-title ui-type">Información</h1><div class="info-menu"><button id="infoAbout" class="ui-type">¿Qué es?</button><button id="infoGuide" class="ui-type">Guía de jardinero urbano</button><button id="infoSuggest" class="ui-type">Buzón de sugerencias</button></div>`;
+  drawerContent.innerHTML=`<div class="eyebrow">Árboles Lavapiés</div><h1 class="tree-title ui-type">Información</h1><div class="info-menu"><button id="infoAbout" class="ui-type">¿Qué es?</button><button id="infoGuide" class="ui-type">Guía de jardinerx urbanx</button><button id="infoSuggest" class="ui-type">Buzón de sugerencias</button></div>`;
   drawer.classList.add('open'); $('#infoAbout').onclick=openAbout; $('#infoGuide').onclick=openGuide; $('#infoSuggest').onclick=()=>suggestDialog.showModal();
 }
 function openAbout(){
@@ -254,7 +302,7 @@ function openAbout(){
   <div class="meta-card"><strong class="ui-type">Versión ${esc(version)}</strong><br>Última actualización de datos: ${esc(fmtDateTime(meta.last_update))}<br>Última revisión de esta versión: ${esc(fmtDateTime(lastReview))}<br>Inventario municipal: actualización ${esc(fmtDate(meta.tree_source?.dataset_updated||'2026-07-27'))}</div>
   <p class="muted">Fuente inicial: <a class="source-link" href="https://datos.madrid.es/dataset/300761-0-arbolado-especies" target="_blank" rel="noopener">Datos Abiertos del Ayuntamiento de Madrid · Arbolado en parques y zonas verdes de Madrid (detalle)</a>. Los datos oficiales son el punto de partida, no una descripción infalible del barrio.</p>
   <p>La intención de este proyecto es crecer con el barrio y, si resulta útil, adaptarse a otros distintos.</p>
-  <div class="credit">Página creada por <a href="${esc(cfg.creatorUrl||'https://www.instagram.com/ipesoaeditorial/')}" target="_blank" rel="noopener"><strong>${esc(cfg.creatorName||'iPesoa editorial')}</strong></a>.</div>`;
+  <div class="credit">Página creada por <a href="${esc(cfg.creatorUrl||'https://www.instagram.com/ipesoa/')}" target="_blank" rel="noopener"><strong>${esc(cfg.creatorName||'iPesoa editorial')}</strong></a>.</div>`;
   drawer.classList.add('open');
 }
 function openGuide(){
@@ -379,6 +427,12 @@ bindButton('guideBtn',openGuide);
 bindButton('suggestBtn',()=>suggestDialog.showModal());
 bindButton('aboutBtn',openAbout);
 bindButton('spreadBtn',openSpread);
+bindButton('outboxBtn',openOutbox);
+$('#openMailBtn').onclick=()=>{if(!getOutbox().length||!requireProjectEmail())return;const bundle=buildBundle(),subject=`[Árboles Lavapiés] ${bundle.item_count} aportación(es)`,body=bundleBody(bundle);window.location.href=`mailto:${encodeURIComponent(cfg.projectEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;showStatus('Se ha abierto tu correo. Revísalo, adjunta las fotos si las hay y pulsa Enviar.',7000);};
+$('#openGmailBtn').onclick=()=>{if(!getOutbox().length||!requireProjectEmail())return;const bundle=buildBundle(),subject=`[Árboles Lavapiés] ${bundle.item_count} aportación(es)`,body=bundleBody(bundle);const url=`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(cfg.projectEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;window.open(url,'_blank','noopener');showStatus('Gmail se ha abierto en otra pestaña. Adjunta las fotos si las hay y envía.',7000);};
+$('#downloadBundleBtn').onclick=()=>{if(!getOutbox().length)return;downloadSubmission(buildBundle(),'arboles-lavapies-aportaciones');showStatus(`JSON descargado. Envíalo a ${cfg.projectEmail||'el correo del proyecto'}.`,6500);};
+$('#copyBundleBtn').onclick=async()=>{if(!getOutbox().length)return;try{await navigator.clipboard.writeText(JSON.stringify(buildBundle(),null,2));showStatus('JSON copiado al portapapeles.');}catch{showStatus('No se pudo copiar. Usa Descargar JSON.');}};
+$('#markSentBtn').onclick=()=>{if(!getOutbox().length)return;if(!confirm('Vaciar la bandeja sólo si ya has enviado el correo o guardado el JSON. ¿Continuar?'))return;saveOutbox([]);renderOutbox();outboxDialog.close();showStatus('Bandeja vaciada. Gracias por participar.');};
 $('#needsBtn').onclick=()=>{showingNeeds=!showingNeeds;if(showingNeeds){const needy=trees.filter(f=>wateringState(idLabel(f.properties||{})).cls==='danger');renderTrees(needy);updateCounter(needy.length);showStatus(needy.length?`${needy.length} árboles con riego antiguo registrado.`:'Todavía no hay árboles marcados como atrasados; los que no tienen historial siguen en gris.');$('#needsBtn').textContent='Mostrar todos';}else{renderTrees(trees);updateCounter(trees.length);showStatus('Mostrando todos los árboles.');$('#needsBtn').textContent='Necesitan agua';}};
 
 $('#createIdentityBtn').onclick=async()=>{const alias=$('#aliasInput').value.trim();try{if(await aliasExists(alias))throw new Error('Ese alias ya está publicado. Elige otro.');const id=await createPendingIdentity(alias);$('#secretAlias').textContent=id.alias;$('#secretCode').textContent=id.secret;identityDialog.close();secretDialog.showModal();deliverSubmission(registrationPayload(id),`registro-${id.alias}`);await refreshIdentityNav();}catch(e){showStatus(e.message,4500);}};
@@ -392,4 +446,5 @@ $('#preparePlaceBtn').onclick=async()=>{if(!pendingLatLng)return;const id=await 
 
 $('#sendSuggestBtn').onclick=async()=>{const text=$('#suggestText').value.trim();if(!text)return showStatus('Escribe la sugerencia.');const id=await syncLocalIdentity();const payload={type:'suggestion',category:$('#suggestCategory').value,note:text,date:new Date().toISOString(),alias:id?.alias||'Anónimo'};if(id?.secret)payload.identity_code=id.secret;deliverSubmission(payload,'sugerencia');suggestDialog.close();$('#suggestText').value='';};
 
+refreshOutboxCount();
 syncLocalIdentity().finally(loadData);
