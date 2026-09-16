@@ -15,45 +15,32 @@ body,p,label,input,textarea,select,.event,.muted{font-style:normal;text-transfor
 .week-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.week-cell{border:1px solid var(--line);border-radius:7px;padding:6px 2px;text-align:center;min-width:0}.week-cell b,.week-cell span,.week-cell em{display:block}.week-cell b{font-size:10px}.week-cell span{font-size:12px;margin:2px 0}.week-cell em{height:16px;font-size:11px;font-style:normal}.comment{padding:10px 0;border-bottom:1px solid var(--line)}.comment.reply{margin-left:18px;padding-left:10px;border-left:2px solid var(--soft)}.comment small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.comment p{margin:6px 0;line-height:1.45}
 
 
-/* v0.4 — pequeños detalles de identidad y navegación */
-.brand-letter{display:inline-block;will-change:transform,color,background-position;color:var(--ink)}
-.brand.intro-party .brand-letter{
-  color:transparent;
-  background-image:linear-gradient(90deg,#123c24 0%,#2d6b31 28%,#7f9d29 55%,#d1cf38 76%,#214e2d 100%);
-  background-size:420% 100%;background-position:calc(var(--i) * -22%) 0;
-  -webkit-background-clip:text;background-clip:text;
-  animation:brand-intro 2.65s cubic-bezier(.2,.75,.2,1) var(--delay) 1 both;
+/* v0.4.1 — navegación restaurada + título robusto */
+.brand-letter{
+  display:inline-block;
+  color:var(--ink);
+  transform:translateY(0) rotate(0deg);
+  transform-origin:50% 70%;
+  will-change:transform,color;
 }
-.brand:hover .brand-letter{
-  color:transparent;
-  background-image:linear-gradient(90deg,#123c24 0%,#2d6b31 28%,#7f9d29 55%,#d1cf38 76%,#214e2d 100%);
-  background-size:420% 100%;background-position:calc(var(--i) * -22%) 0;
-  -webkit-background-clip:text;background-clip:text;
-  animation:brand-hover 1.15s cubic-bezier(.2,.75,.2,1) var(--delay) 1 both;
+.brand.brand-party .brand-letter{
+  animation:brand-party 2.95s cubic-bezier(.18,.82,.22,1) var(--delay) 1;
 }
-@keyframes brand-intro{
-  0%{transform:translateY(0) rotate(0);background-position:10% 50%}
-  18%{transform:translateY(-5px) rotate(-2deg)}
-  34%{transform:translateY(3px) rotate(1.5deg)}
-  50%{transform:translateY(-3px) rotate(-1deg);background-position:85% 50%}
-  66%{transform:translateY(2px)}
-  82%{transform:translateY(-1px);color:transparent}
-  100%{transform:translateY(0);color:var(--ink);background-image:none}
+@keyframes brand-party{
+  0%{transform:translateY(0) rotate(0deg) scale(1);color:var(--ink)}
+  11%{transform:translateY(-2px) rotate(-.5deg) scale(1.01);color:#163d28}
+  23%{transform:translateY(-7px) rotate(-1.5deg) scale(1.035);color:#2f8a47}
+  35%{transform:translateY(4px) rotate(1deg) scale(.99);color:#97b832}
+  47%{transform:translateY(-6px) rotate(-.8deg) scale(1.03);color:#dfca39}
+  59%{transform:translateY(3px) rotate(.8deg) scale(1);color:#df7938}
+  70%{transform:translateY(-4px) rotate(-.7deg) scale(1.025);color:#b54f8f}
+  81%{transform:translateY(2px) rotate(.5deg) scale(1);color:#496fc5}
+  90%{transform:translateY(-1px) rotate(-.2deg) scale(1.01);color:#2f8a70}
+  100%{transform:translateY(0) rotate(0deg) scale(1);color:var(--ink)}
 }
-@keyframes brand-hover{
-  0%{transform:translateY(0);background-position:5% 50%}
-  30%{transform:translateY(-5px)}
-  56%{transform:translateY(3px);background-position:95% 50%}
-  78%{transform:translateY(-2px)}
-  100%{transform:translateY(0);color:var(--ink);background-image:none}
-}
-.map-info{position:absolute;z-index:805;left:14px;top:14px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(255,254,249,.94);color:var(--ink);cursor:pointer;box-shadow:0 5px 18px #0001;padding:0;font-size:13px}
-.searchbar{left:calc(50% + 20px);width:min(620px,calc(100% - 90px))}
-.info-menu{display:grid;gap:8px;margin-top:18px}.info-menu button{width:100%;text-align:left;border:1px solid var(--line);background:white;border-radius:10px;padding:14px;cursor:pointer}.info-menu button:hover{background:var(--soft)}
-.issue-list-item{cursor:pointer;border-radius:9px;padding:12px 9px;margin:0 -9px;width:calc(100% + 18px);text-align:left;border:0;background:transparent;color:var(--ink)}.issue-list-item:hover{background:var(--soft)}.issue-list-item small{display:block;color:var(--muted);margin-top:4px}.issue-list-item p{display:none}
+@media(max-width:650px){.brand-letter{line-height:20px}}
+@media(prefers-reduced-motion:reduce){.brand.brand-party .brand-letter{animation:none!important;color:var(--ink)!important;transform:none!important}}
 .identity-secret-small{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:3px 0 18px;font-size:11px;color:var(--muted)}.identity-secret-small code{font-size:11px;letter-spacing:.04em;background:var(--soft);padding:5px 7px;border-radius:6px;color:var(--ink)}.identity-secret-small button{border:0!important;background:transparent!important;padding:3px 0!important;color:var(--accent)!important;text-decoration:underline;font-size:11px;cursor:pointer;width:auto!important;margin:0!important}
 .profile-help{margin:5px 0 0;font-size:12px;color:var(--muted)}.profile-blank{min-height:8px}
 .date-add-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.date-add-row button{margin-top:6px;white-space:nowrap}.commitment-dates{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.date-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--soft);padding:7px 9px;border-radius:999px;font-size:12px}.date-chip button{border:0!important;background:transparent!important;padding:0!important;margin:0!important;font-size:16px;line-height:1;color:var(--muted)!important}
 .credit a{color:var(--ink);text-underline-offset:2px}
-@media(max-width:650px){.map-info{top:10px;left:10px}.searchbar{left:calc(50% + 19px);width:calc(100% - 76px)}.brand-letter{line-height:20px}}
-@media(prefers-reduced-motion:reduce){.brand.intro-party .brand-letter,.brand:hover .brand-letter{animation:none!important;color:var(--ink)!important;background:none!important;transform:none!important}}

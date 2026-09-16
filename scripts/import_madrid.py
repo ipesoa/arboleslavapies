@@ -47,7 +47,7 @@ def main():
         meta=json.loads(meta_path.read_text(encoding='utf-8')) if meta_path.exists() else {}
     except Exception:
         meta={}
-    meta['version']='0.4.1'
+    meta['version']='0.4.0'
     meta['tree_import']=datetime.now(timezone.utc).isoformat()
     meta['last_update']=meta['tree_import']
     meta['tree_count']=len(rows)

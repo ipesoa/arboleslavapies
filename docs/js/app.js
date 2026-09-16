@@ -27,9 +27,25 @@ function setupBrand(){
   const brand=$('#brand'); if(!brand)return;
   const text=brand.textContent; brand.textContent='';
   [...text].forEach((ch,i)=>{
-    const span=document.createElement('span'); span.className='brand-letter'; span.textContent=ch===' '?'\u00a0':ch;
-    span.style.setProperty('--i',i); span.style.setProperty('--delay',`${Math.min(i*0.025,.35)}s`); brand.appendChild(span);
+    const span=document.createElement('span');
+    span.className='brand-letter';
+    span.textContent=ch===' '?'\u00a0':ch;
+    span.style.setProperty('--delay',`${Math.min(i*0.032,.42)}s`);
+    brand.appendChild(span);
   });
+
+  let resetTimer=null;
+  const play=()=>{
+    brand.classList.remove('brand-party');
+    void brand.offsetWidth;
+    brand.classList.add('brand-party');
+    clearTimeout(resetTimer);
+    resetTimer=setTimeout(()=>brand.classList.remove('brand-party'),3600);
+  };
+  brand.addEventListener('pointerenter',play);
+  brand.addEventListener('pointerdown',play);
+  brand.addEventListener('focus',play);
+  setTimeout(play,180);
 }
 setupBrand();
 
@@ -229,7 +245,7 @@ function openInfoMenu(){
   drawer.classList.add('open'); $('#infoAbout').onclick=openAbout; $('#infoGuide').onclick=openGuide; $('#infoSuggest').onclick=()=>suggestDialog.showModal();
 }
 function openAbout(){
-  const version=cfg.version||meta.version||'0.4.1';
+  const version=cfg.version||meta.version||'0.4.0';
   const lastReview=cfg.lastReview||meta.last_review;
   drawerContent.innerHTML=`<div class="eyebrow">Proyecto vecinal</div><h1 class="tree-title ui-type">¿Qué es?</h1>
   <p><strong>Árboles Lavapiés</strong> es un mapa vecinal para documentar y cuidar el arbolado y los espacios verdes del barrio, coordinar riegos y construir una memoria colectiva.</p>
@@ -238,7 +254,7 @@ function openAbout(){
   <div class="meta-card"><strong class="ui-type">Versión ${esc(version)}</strong><br>Última actualización de datos: ${esc(fmtDateTime(meta.last_update))}<br>Última revisión de esta versión: ${esc(fmtDateTime(lastReview))}<br>Inventario municipal: actualización ${esc(fmtDate(meta.tree_source?.dataset_updated||'2026-07-27'))}</div>
   <p class="muted">Fuente inicial: <a class="source-link" href="https://datos.madrid.es/dataset/300761-0-arbolado-especies" target="_blank" rel="noopener">Datos Abiertos del Ayuntamiento de Madrid · Arbolado en parques y zonas verdes de Madrid (detalle)</a>. Los datos oficiales son el punto de partida, no una descripción infalible del barrio.</p>
   <p>La intención de este proyecto es crecer con el barrio y, si resulta útil, adaptarse a otros distintos.</p>
-  <div class="credit">Página creada por <a href="${esc(cfg.creatorUrl||'https://www.instagram.com/ipesoaeditorial/')}" target="_blank" rel="noopener"><strong>${esc(cfg.creatorName||'iPesoa editorial')}</strong></a>.</div>`;
+  <div class="credit">Página creada por <a href="${esc(cfg.creatorUrl||'https://www.instagram.com/ipesoa/')}" target="_blank" rel="noopener"><strong>${esc(cfg.creatorName||'iPesoa editorial')}</strong></a>.</div>`;
   drawer.classList.add('open');
 }
 function openGuide(){
@@ -296,7 +312,7 @@ async function doSearch(){const q=$('#searchInput').value.trim();if(!q)return;co
 $('#searchBtn').onclick=doSearch;$('#searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
 $('#nearBtn').onclick=()=>navigator.geolocation?.getCurrentPosition(pos=>{map.flyTo([pos.coords.latitude,pos.coords.longitude],18);showStatus('Mostrando tu zona aproximada.');},()=>showStatus('No se pudo acceder a tu ubicación.'));
 $('#drawerClose').onclick=()=>drawer.classList.remove('open');$('#profileBtn').onclick=async()=>{await refreshIdentityDialog();identityDialog.showModal();};$('#addPlaceBtn').onclick=()=>addDialog.showModal();
-$('#issuesBtn').onclick=openIssues;$('#infoBtn').onclick=openInfoMenu;
+$('#issuesBtn').onclick=openIssues;$('#guideBtn').onclick=openGuide;$('#suggestBtn').onclick=()=>suggestDialog.showModal();$('#aboutBtn').onclick=openAbout;
 $('#needsBtn').onclick=()=>{showingNeeds=!showingNeeds;if(showingNeeds){const needy=trees.filter(f=>wateringState(idLabel(f.properties||{})).cls==='danger');renderTrees(needy);updateCounter(needy.length);showStatus(needy.length?`${needy.length} árboles con riego antiguo registrado.`:'Todavía no hay árboles marcados como atrasados; los que no tienen historial siguen en gris.');$('#needsBtn').textContent='Mostrar todos';}else{renderTrees(trees);updateCounter(trees.length);showStatus('Mostrando todos los árboles.');$('#needsBtn').textContent='Necesitan agua';}};
 
 $('#createIdentityBtn').onclick=async()=>{const alias=$('#aliasInput').value.trim();try{if(await aliasExists(alias))throw new Error('Ese alias ya está publicado. Elige otro.');const id=await createPendingIdentity(alias);$('#secretAlias').textContent=id.alias;$('#secretCode').textContent=id.secret;identityDialog.close();secretDialog.showModal();deliverSubmission(registrationPayload(id),`registro-${id.alias}`);await refreshIdentityNav();}catch(e){showStatus(e.message,4500);}};

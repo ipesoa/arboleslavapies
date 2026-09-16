@@ -41,7 +41,7 @@ def main():
     inbox.mkdir(parents=True,exist_ok=True); pending.mkdir(parents=True,exist_ok=True)
     users=load(site/'data/users.json',[])
     events=load(site/'data/events.json',[])
-    meta=load(site/'data/meta.json',{'version':'0.4.1'})
+    meta=load(site/'data/meta.json',{'version':'0.4.0'})
     aliases={norm(u['alias']):u for u in users}
     event_submission_ids={str(e.get('submission_id')).split('::',1)[0] for e in events if e.get('submission_id')}
 
@@ -135,7 +135,7 @@ def main():
 
     if changed_users: write(site/'data/users.json',users)
     if changed_events: write(site/'data/events.json',events)
-    meta['version']='0.4.1'
+    meta['version']='0.4.0'
     meta['last_update']=now()
     write(site/'data/meta.json',meta)
     print('Actualización registrada:',meta['last_update'])
