@@ -1,7 +1,7 @@
 window.APP_CONFIG = {
   name: "Árboles Lavapiés",
-  // Puede ser Gmail, Proton Mail u otro correo. Déjalo vacío hasta decidirlo.
-  projectEmail: "",
+  //
+  projectEmail: "arboleslavapies@gmail.com",
   center: [40.4084, -3.7008],
   zoom: 16,
   maxZoom: 19,
