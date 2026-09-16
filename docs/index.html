@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Árboles Lavapiés</title>
+  <meta name="description" content="Mapa vecinal abierto para cuidar, documentar y recordar el arbolado de Lavapiés." />
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a id="brand" class="brand ui-type intro-party" href="#" aria-label="Árboles Lavapiés">Árboles Lavapiés</a>
+    <nav class="topnav" aria-label="Navegación principal">
+      <button id="nearBtn" class="text-btn ui-type">Cerca de mí</button>
+      <button id="issuesBtn" class="text-btn ui-type">Incidencias</button>
+      <button id="profileBtn" class="text-btn ui-type profile-nav">Identidad</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="map-shell">
+      <div class="searchbar">
+        <input id="searchInput" autocomplete="street-address" placeholder="Buscar calle, número o árbol…" />
+        <button id="searchBtn" class="ui-type" aria-label="Buscar">Buscar</button>
+      </div>
+      <div id="map"></div>
+      <div id="mapCounter" class="map-counter ui-type hidden"></div>
+      <div class="map-actions">
+        <button id="addPlaceBtn" class="primary ui-type">+ Añadir lugar</button>
+        <button id="needsBtn" class="ui-type">Necesitan agua</button>
+      </div>
+      <button id="infoBtn" class="map-info ui-type" aria-label="Información y recursos">i</button>
+      <div id="status" class="status hidden"></div>
+    </section>
+
+    <aside id="drawer" class="drawer" aria-live="polite">
+      <button id="drawerClose" class="drawer-close" aria-label="Cerrar">×</button>
+      <div id="drawerContent"></div>
+    </aside>
+  </main>
+
+  <dialog id="identityDialog" class="dialog">
+    <form method="dialog" id="identityForm">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <h2 class="ui-type">Identidad vecinal</h2>
+      <div id="identityCurrent" class="hidden"></div>
+      <div id="identityCreate">
+        <p class="muted">No necesitas email ni datos personales. El alias debe ser único.</p>
+        <label>Alias
+          <input id="aliasInput" maxlength="28" pattern="[A-Za-zÀ-ÿ0-9._-]{3,28}" placeholder="Luisa27" />
+        </label>
+        <button id="createIdentityBtn" type="button" class="primary full ui-type">Crear identidad</button>
+        <hr />
+        <h3 class="ui-type">Ya tengo código</h3>
+        <label>Alias
+          <input id="loginAlias" maxlength="28" placeholder="Luisa27" />
+        </label>
+        <label>Código secreto
+          <input id="loginCode" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" />
+        </label>
+        <button id="loginBtn" type="button" class="full ui-type">Entrar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="secretDialog" class="dialog important">
+    <div>
+      <h2 class="ui-type">Guarda tu código</h2>
+      <p>Haz una captura de pantalla o cópialo. Es tu única llave para recuperar esta identidad en otro navegador.</p>
+      <div class="secret-card">
+        <strong id="secretAlias" class="ui-type"></strong>
+        <code id="secretCode"></code>
+      </div>
+      <p class="muted">Normalmente quedará guardado en este navegador. Si lo pierdes, no pasa nada grave: podrás crear otra identidad, pero esta no se podrá recuperar automáticamente.</p>
+      <button id="copySecretBtn" class="primary full ui-type">Copiar código</button>
+      <button id="secretDoneBtn" class="full ui-type">Ya lo he guardado</button>
+    </div>
+  </dialog>
+
+  <dialog id="addDialog" class="dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <h2 class="ui-type">Añadir lugar</h2>
+      <p class="muted">Primero coloca el marcador en el mapa. Los cambios del mapa pasan por revisión y suelen aparecer tras la siguiente actualización diaria.</p>
+      <label>Tipo
+        <select id="placeType">
+          <option value="tree">Árbol no registrado</option>
+          <option value="new_tree">Plantación reciente</option>
+          <option value="empty_tree_pit">Alcorque vacío</option>
+          <option value="water">Punto de agua</option>
+          <option value="green_area">Zona verde</option>
+          <option value="issue">Incidencia</option>
+          <option value="other">Otro</option>
+        </select>
+      </label>
+      <label>Nota
+        <textarea id="placeNote" rows="4" placeholder="Describe brevemente qué hay aquí…"></textarea>
+      </label>
+      <div id="placeCoords" class="coords">Sin ubicación todavía</div>
+      <button id="startPinBtn" type="button" class="primary full ui-type">Elegir punto en el mapa</button>
+      <button id="preparePlaceBtn" type="button" class="full ui-type" disabled>Preparar solicitud</button>
+    </form>
+  </dialog>
+
+  <dialog id="actionDialog" class="dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <div id="actionEyebrow" class="eyebrow"></div>
+      <h2 id="actionTitle" class="ui-type">Aportación</h2>
+      <div id="commitmentFields" class="hidden">
+        <label>Añadir día
+          <div class="date-add-row">
+            <input id="commitmentDate" type="date" />
+            <button id="addCommitmentDateBtn" type="button" class="ui-type">Añadir</button>
+          </div>
+        </label>
+        <div id="commitmentDates" class="commitment-dates" aria-live="polite"></div>
+        <p class="muted small-copy">Puedes elegir un solo día o varios.</p>
+      </div>
+      <div id="issueFields" class="hidden">
+        <label>Tipo de incidencia
+          <select id="issueCategory">
+            <option value="dry">Necesita agua / parece seco</option>
+            <option value="damaged">Daño / rama / tronco</option>
+            <option value="missing">Árbol ausente / tocón</option>
+            <option value="pit">Problema en alcorque</option>
+            <option value="pest">Plaga / enfermedad aparente</option>
+            <option value="map_error">Error en el mapa</option>
+            <option value="danger">Posible peligro</option>
+            <option value="other">Otra</option>
+          </select>
+        </label>
+      </div>
+      <label id="actionNoteLabel">Nota
+        <textarea id="actionNote" rows="5" placeholder="Escribe una nota si hace falta…"></textarea>
+      </label>
+      <p class="muted small-copy">La aportación se confirma en la siguiente actualización diaria. Las incidencias y cambios de mapa pueden pasar por revisión manual.</p>
+      <button id="sendActionBtn" type="button" class="primary full ui-type">Preparar envío</button>
+    </form>
+  </dialog>
+
+  <dialog id="photoDialog" class="dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <div class="eyebrow">Archivo fotográfico</div>
+      <h2 class="ui-type">Añadir foto</h2>
+      <p class="muted">La foto se reduce y convierte a WebP en tu navegador. Al redibujarla se eliminan los metadatos EXIF del archivo original.</p>
+      <label>Foto
+        <input id="photoInput" type="file" accept="image/*" />
+      </label>
+      <label>Nota opcional
+        <textarea id="photoCaption" rows="3" placeholder="Por ejemplo: estado del árbol después del riego…"></textarea>
+      </label>
+      <div id="photoPreviewWrap" class="photo-preview-wrap hidden"><img id="photoPreview" alt="Vista previa" /></div>
+      <button id="sendPhotoBtn" type="button" class="primary full ui-type" disabled>Preparar foto</button>
+    </form>
+  </dialog>
+
+  <dialog id="suggestDialog" class="dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+      <h2 class="ui-type">Buzón de sugerencias</h2>
+      <p class="muted">Ideas, errores, actividades, propuestas para la guía o cualquier cosa que pueda mejorar Árboles Lavapiés.</p>
+      <label>Tipo
+        <select id="suggestCategory">
+          <option value="map">Mapa / datos</option>
+          <option value="care">Cuidados / guía</option>
+          <option value="activity">Actividad vecinal</option>
+          <option value="web">Web / diseño</option>
+          <option value="other">Otra idea</option>
+        </select>
+      </label>
+      <label>Mensaje
+        <textarea id="suggestText" rows="6" placeholder="Cuéntanos…"></textarea>
+      </label>
+      <button id="sendSuggestBtn" type="button" class="primary full ui-type">Preparar sugerencia</button>
+    </form>
+  </dialog>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
