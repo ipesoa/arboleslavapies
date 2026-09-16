@@ -254,7 +254,7 @@ function openAbout(){
   <div class="meta-card"><strong class="ui-type">Versión ${esc(version)}</strong><br>Última actualización de datos: ${esc(fmtDateTime(meta.last_update))}<br>Última revisión de esta versión: ${esc(fmtDateTime(lastReview))}<br>Inventario municipal: actualización ${esc(fmtDate(meta.tree_source?.dataset_updated||'2026-07-27'))}</div>
   <p class="muted">Fuente inicial: <a class="source-link" href="https://datos.madrid.es/dataset/300761-0-arbolado-especies" target="_blank" rel="noopener">Datos Abiertos del Ayuntamiento de Madrid · Arbolado en parques y zonas verdes de Madrid (detalle)</a>. Los datos oficiales son el punto de partida, no una descripción infalible del barrio.</p>
   <p>La intención de este proyecto es crecer con el barrio y, si resulta útil, adaptarse a otros distintos.</p>
-  <div class="credit">Página creada por <a href="${esc(cfg.creatorUrl||'https://www.instagram.com/ipesoa/')}" target="_blank" rel="noopener"><strong>${esc(cfg.creatorName||'iPesoa editorial')}</strong></a>.</div>`;
+  <div class="credit">Página creada por <a href="${esc(cfg.creatorUrl||'https://www.instagram.com/ipesoaeditorial/')}" target="_blank" rel="noopener"><strong>${esc(cfg.creatorName||'iPesoa editorial')}</strong></a>.</div>`;
   drawer.classList.add('open');
 }
 function openGuide(){
